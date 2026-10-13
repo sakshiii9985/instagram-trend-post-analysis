@@ -3,6 +3,10 @@
 
 A simple, responsive static prototype inspired by the supplied Figma design. It uses illustrative sample data only and does not connect to Instagram or any external service.
 
+## Figma prototype
+
+[Open the interactive prototype](https://www.figma.com/make/DwLm9wFBk9FSgmtmWjrgYw/Instagram-Trend-Analysis-Prototype?fullscreen=1&t=eFn01Hyy2bzJ9ZKb-1&code-node-id=0-6)
+
 ## Run locally
 
 Open `index.html` in a browser. No build step or dependencies are required.
