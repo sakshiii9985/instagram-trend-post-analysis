@@ -381,11 +381,7 @@ collection using a stable post ID/URL-derived key.
 -   Recommendations are observations, not causal conclusions or
     guarantees.
 
-## License and academic use
 
-This repository is an academic project. Add a license file if you intend
-to distribute it publicly. Follow Bright Data's terms and applicable
-privacy/platform rules when collecting and using public data.
 
 In powershell run:
 cd "C:\Users\Sakshi\Desktop\instagram"
