@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "figma-make-app",
   "private": true,
   "version": "1.0.0",
@@ -23,5 +24,21 @@
     "oxfmt": "^0.2.0",
     "typescript": "^5.7.0",
     "vite": "^8.0.5"
+=======
+  "name": "trendvision-ai",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
+    "build": "npm run build --workspace frontend",
+    "start": "npm run start --workspace backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+>>>>>>> ed6fd64 (Initial commit)
   }
 }
