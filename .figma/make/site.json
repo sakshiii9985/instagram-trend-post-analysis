@@ -1,0 +1,10 @@
+{
+  "description": "Analyze Instagram profiles with insights on engagement, top posts, and hashtag performance, empowering users to enhance their social media strategy.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
