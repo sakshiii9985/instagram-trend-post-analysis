@@ -107,6 +107,18 @@ function stringArray(value: unknown): string[] {
   return value.map(stringValue).filter((item): item is string => item !== null);
 }
 
+function stringArrayFrom(source: JsonObject, keys: string[]): string[] {
+  return [...new Set(keys.flatMap((key) => stringArray(source[key])))];
+}
+
+function firstStringValue(source: JsonObject, keys: string[]): string | null {
+  for (const key of keys) {
+    const value = stringValue(source[key]);
+    if (value) return value;
+  }
+  return null;
+}
+
 function normalizeInstagramInput(input: string): { username: string; profileUrl: string } {
   const value = input.trim();
   if (!value) {
@@ -211,22 +223,36 @@ function normalizeProfile(payload: unknown, requested: { username: string; profi
     biography: stringValue(firstValue(row, ['biography', 'bio', 'about'])),
     verified: booleanValue(firstValue(row, ['is_verified', 'verified', 'isVerified'])),
     externalUrl: stringValue(firstValue(row, ['external_url', 'externalUrl', 'website', 'external_links'])),
-    profileImage: stringValue(firstValue(row, [
+    profileImage: firstStringValue(row, [
       'profile_image',
       'profile_image_link',
       'profile_image_url',
+      'profile_image_url_hd',
       'profile_pic_url',
       'profile_pic_url_hd',
       'profileImage',
       'profile_picture',
+      'profile_picture_url',
+      'profilePictureUrl',
       'profile_pic',
+      'avatar_url',
       'avatar',
-    ])),
+    ]),
   };
 }
 
 function getApiErrorStatus(error: unknown): number | undefined {
   return axios.isAxiosError(error) ? error.response?.status : undefined;
+}
+
+function getApiErrorMessage(error: unknown): string | null {
+  if (!axios.isAxiosError(error)) return null;
+  const response = error.response?.data;
+  if (typeof response === 'string') return response.trim().slice(0, 300) || null;
+  const object = asObject(response);
+  if (!object) return null;
+  return stringValue(firstValue(object, ['message', 'error', 'error_message', 'error_description', 'detail']))
+    ?.slice(0, 300) ?? null;
 }
 
 function translateBrightDataError(error: unknown, resource: 'profile' | 'posts' | 'comments' = 'profile'): ProfileFetchError {
@@ -236,7 +262,15 @@ function translateBrightDataError(error: unknown, resource: 'profile' | 'posts' 
     }
 
     const status = getApiErrorStatus(error);
-    if (status === 400) return new ProfileFetchError(`Bright Data rejected the ${resource} request. Check the configured ${resource} dataset and its input format.`, 502);
+    if (status === 400) {
+      const details = getApiErrorMessage(error);
+      return new ProfileFetchError(
+        details
+          ? `Bright Data rejected the ${resource} request: ${details}`
+          : `Bright Data rejected the ${resource} request. Check the configured ${resource} dataset and its input format.`,
+        502,
+      );
+    }
     if (status === 401 || status === 403) return new ProfileFetchError('Bright Data authentication failed. Check the backend API token.', 502);
     if (status === 404) return new ProfileFetchError(`Bright Data could not find the ${resource} dataset or snapshot. Check the configured dataset ID.`, 502);
     if (status === 429) return new ProfileFetchError('Bright Data rate limit reached. Please try again later.', 503);
@@ -427,9 +461,21 @@ function normalizePost(row: JsonObject, username: string, profileUrl: string): I
   const views = numberValue(firstValue(row, ['views', 'view_count', 'video_view_count', 'plays']));
   const datePosted = stringValue(firstValue(row, ['date_posted', 'posted_at', 'timestamp', 'taken_at', 'date']));
   const mediaType = stringValue(firstValue(row, ['media_type', 'content_type', 'type']));
-  const imageUrls = [
-    ...stringArray(firstValue(row, ['photos', 'images', 'image_urls', 'display_url', 'thumbnail_url', 'thumbnail'])),
-  ];
+  const imageUrls = stringArrayFrom(row, [
+    'photos',
+    'images',
+    'image_urls',
+    'imageUrls',
+    'display_url',
+    'displayUrl',
+    'thumbnail_url',
+    'thumbnailUrl',
+    'thumbnail',
+    'image_url',
+    'imageUrl',
+    'post_image_url',
+    'media_url',
+  ]);
   const videoValues = stringArray(firstValue(row, ['video_url', 'videoUrl', 'videos', 'video']));
   const videoUrl = videoValues[0] ?? null;
 
@@ -547,13 +593,13 @@ export async function fetchInstagramProfile(usernameOrUrl: string): Promise<Inst
   try {
     const triggerResponse = await axios.post(
       `${BRIGHTDATA_API_BASE}/trigger`,
-      [{ user_name: requested.username }],
+      [{ url: requested.profileUrl }],
       {
         params: {
           dataset_id: datasetId,
           include_errors: true,
           type: 'discover_new',
-          discover_by: 'user_name',
+          discover_by: 'url',
         },
         headers: {
           Authorization: `Bearer ${token}`,

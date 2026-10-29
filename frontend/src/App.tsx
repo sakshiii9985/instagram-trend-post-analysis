@@ -156,6 +156,63 @@ function getErrorMessage(error: unknown, fallback: string): string {
     : fallback;
 }
 
+function ProfileAvatar({
+  className,
+  imageUrl,
+  username,
+}: {
+  className: string;
+  imageUrl: string | null;
+  username: string;
+}) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+
+  if (imageUrl && imageUrl !== failedUrl) {
+    return (
+      <img
+        className={className}
+        src={imageUrl}
+        alt=""
+        onError={() => setFailedUrl(imageUrl)}
+      />
+    );
+  }
+
+  return (
+    <div className={`${className} header-avatar-placeholder`} aria-label={`@${username}`}>
+      {username.slice(0, 1).toUpperCase()}
+    </div>
+  );
+}
+
+function ImageWithFallback({
+  src,
+  alt,
+  className,
+  fallbackClassName,
+}: {
+  src: string | null;
+  alt: string;
+  className: string;
+  fallbackClassName: string;
+}) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+
+  if (src && src !== failedUrl) {
+    return (
+      <img
+        className={className}
+        src={src}
+        alt={alt}
+        loading="lazy"
+        onError={() => setFailedUrl(src)}
+      />
+    );
+  }
+
+  return <div className={fallbackClassName}>Image unavailable</div>;
+}
+
 function isNotFound(error: unknown): boolean {
   return axios.isAxiosError(error) && error.response?.status === 404;
 }
@@ -512,16 +569,12 @@ function App() {
         const image = post.imageUrls[0] ?? post.videoUrl;
         return (
           <article className="image-card" key={post.postKey}>
-            {image ? (
-              <img
-                src={image}
-                alt=""
-                loading="lazy"
-                onError={(event) => event.currentTarget.removeAttribute('src')}
-              />
-            ) : (
-              <div className="post-card-empty">Instagram post</div>
-            )}
+            <ImageWithFallback
+              src={image}
+              alt=""
+              className=""
+              fallbackClassName="post-card-empty"
+            />
             <div className="post-card-body">
               <div className="post-card-title-row">
                 <span>Post {index + 1}</span>
@@ -622,7 +675,14 @@ function App() {
               <div className="landing-avatar avatar-placeholder">◎</div>
               <div className="art-post-preview">
                 <div className="art-post-thumb">
-                  {posts[0]?.imageUrls[0] && <img src={posts[0].imageUrls[0]} alt="" />}
+                  {posts[0]?.imageUrls[0] && (
+                    <ImageWithFallback
+                      src={posts[0].imageUrls[0]}
+                      alt=""
+                      className=""
+                      fallbackClassName="art-post-image-fallback"
+                    />
+                  )}
                 </div>
                 <div className="art-post-details">
                   <strong>Saved public posts</strong>
@@ -684,11 +744,11 @@ function App() {
           <div className="dashboard-header-actions">
             {lookupForm('dashboard-lookup')}
             <div className="header-profile">
-              {profile.profileImage ? (
-                <img src={profile.profileImage} alt="" />
-              ) : (
-                <div className="header-avatar-placeholder">{profile.username.slice(0, 1).toUpperCase()}</div>
-              )}
+              <ProfileAvatar
+                className=""
+                imageUrl={profile.profileImage}
+                username={profile.username}
+              />
               <span>@{profile.username}</span>
             </div>
           </div>
@@ -706,11 +766,11 @@ function App() {
           <>
             <section className="dashboard-profile panel">
               <div className="dashboard-profile-main">
-                {profile.profileImage ? (
-                  <img className="dashboard-avatar" src={profile.profileImage} alt="" />
-                ) : (
-                  <div className="dashboard-avatar header-avatar-placeholder">{profile.username.slice(0, 1).toUpperCase()}</div>
-                )}
+                <ProfileAvatar
+                  className="dashboard-avatar"
+                  imageUrl={profile.profileImage}
+                  username={profile.username}
+                />
                 <div>
                   <h2>
                     {profile.fullName || `@${profile.username}`}
@@ -1047,15 +1107,12 @@ function App() {
                     <tbody>{fuzzyAnalysis.classifications.map((item) => (
                       <tr key={item.postKey}>
                         <td className="fuzzy-post-cell">
-                          {item.thumbnailUrl ? (
-                            <img
-                              className="fuzzy-post-thumbnail"
-                              src={item.thumbnailUrl}
-                              alt={item.caption || 'Instagram post thumbnail'}
-                              loading="lazy"
-                              onError={(event) => event.currentTarget.style.visibility = 'hidden'}
-                            />
-                          ) : <span className="fuzzy-thumbnail-placeholder">No image</span>}
+                          <ImageWithFallback
+                            src={item.thumbnailUrl}
+                            alt={item.caption || 'Instagram post thumbnail'}
+                            className="fuzzy-post-thumbnail"
+                            fallbackClassName="fuzzy-thumbnail-placeholder"
+                          />
                           <div className="fuzzy-post-label">
                             {item.postUrl ? <a href={item.postUrl} target="_blank" rel="noreferrer">{item.mediaType || 'Open post'}</a> : <span>{item.mediaType || 'Post'}</span>}
                             <small>{formatDate(item.datePosted)}{item.caption ? ` · ${item.caption.slice(0, 55)}` : ''}</small>

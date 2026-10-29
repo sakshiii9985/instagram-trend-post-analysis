@@ -1389,6 +1389,15 @@ img {
   object-fit: cover;
 }
 
+.art-post-image-fallback {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: #81768f;
+  font-size: .68rem;
+}
+
 .art-post-details {
   display: grid;
   gap: 3px;
